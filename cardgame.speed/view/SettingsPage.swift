@@ -12,6 +12,7 @@ struct SettingsPage: View {
     
     @EnvironmentObject var viewRouter:ViewRouter
     
+    
     var body: some View {
         Button(action: {
             self.viewRouter.currentView = "StartPage"

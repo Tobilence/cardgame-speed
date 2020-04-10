@@ -28,6 +28,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             window.rootViewController = UIHostingController(rootView:
                 contentView
                     .environmentObject(ViewRouter())
+                    .environmentObject(GlobalSettings())
             )
             self.window = window
             window.makeKeyAndVisible()

@@ -11,18 +11,24 @@ import SwiftUI
 struct MotherView: View {
     
     @EnvironmentObject var viewRouter:ViewRouter
+    @EnvironmentObject var globalSettings:GlobalSettings
     
     var body: some View {
         ZStack {
             if self.viewRouter.currentView == "StartPage" {
                 StartPage()
                     .environmentObject(self.viewRouter)
+                    .transition(.identity)
             } else if self.viewRouter.currentView == "GamePage" {
-                GamePage()
+                SpeedView()
                     .environmentObject(self.viewRouter)
+                    .environmentObject(SpeedGame())
+                    .transition(.identity)
+                
             } else if self.viewRouter.currentView == "SettingsPage"{
                 SettingsPage()
                     .environmentObject(self.viewRouter)
+                    .transition(.identity)
             }
         }
     }
@@ -31,5 +37,7 @@ struct MotherView: View {
 struct MotherView_Preview: PreviewProvider {
     static var previews: some View {
         MotherView()
+        .environmentObject(ViewRouter())
+        .environmentObject(GlobalSettings())
     }
 }

@@ -16,7 +16,9 @@ struct StartPage: View {
         VStack {
             HStack {
                 Button(action: {
-                    self.viewRouter.currentView = "SettingsPage"
+                    withAnimation {
+                        self.viewRouter.currentView = "SettingsPage"
+                    }
                 }) {
                     Text("Settings")
                         .font(.largeTitle)
@@ -29,7 +31,9 @@ struct StartPage: View {
             HStack (alignment: .center) {
                 Spacer()
                 Button(action: {
-                    self.viewRouter.currentView = "GamePage"
+                    withAnimation {
+                        self.viewRouter.currentView = "GamePage"
+                    }
                 }) {
                     Text("Start Game")
                         .fontWeight(.light)
@@ -50,7 +54,7 @@ struct StartPage: View {
                 .resizable()
                 .aspectRatio(contentMode: .fill)
         )
-            .edgesIgnoringSafeArea(.all)
+        .edgesIgnoringSafeArea(.all)
     }
 }
 
