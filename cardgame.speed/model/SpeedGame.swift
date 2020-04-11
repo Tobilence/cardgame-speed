@@ -16,7 +16,7 @@ class SpeedGame: ObservableObject {
     @Published var ownScore:Int = 0
     @Published var opponentScore:Int = 0
     @Published var ownCards:[Card] = []
-    @Published var opponentCards:[Card] = []
+    var opponentCards:[Card] = []
     @Published var showingCards:[Card] = []
     @Published var gameOver = false
     
@@ -30,7 +30,7 @@ class SpeedGame: ObservableObject {
                 self.showingCards.append(try cardDeck.pickCard())
             }
         } catch {
-            print(error)
+            print("Should never throw here: \(error)")
         }
     }
     
@@ -51,7 +51,6 @@ class SpeedGame: ObservableObject {
                 opponentCardPlaced = true
                 opponentCards[index] = try cardDeck.pickCard()
             } catch GameError.cardNotPlaceable {
-                print("Opponent Card not placeable: \(card.imageName)")
             } catch {
                 print(error)
             }
@@ -78,7 +77,7 @@ class SpeedGame: ObservableObject {
     /// replaces the showCard with the given card
     /// replaces the ownCard with a random new Card from the deck (if possible)
     /// throws if the card cant replace a showCard or if no Cards are left in the deck
-    func placeOwnCard(_ card: Card) throws{
+    func placeOwnCard(_ card: Card) throws {
         do {
             let placeableIndex = try cardIsPlaceable(card)
             showingCards[placeableIndex] = card
@@ -89,8 +88,10 @@ class SpeedGame: ObservableObject {
             ownScore += 1
         }
         catch (CardError.notEnoughCards) {
-            if !(opponentCards.count > 0 && ownCards.count > 0) {
+            card.placeholder = true
+            if ownCards.count == 0 {
                 self.gameOver = true
+                print("Game Over! Player no more cards")
             }
         }
         catch {

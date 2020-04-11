@@ -41,6 +41,7 @@ struct SpeedView: View {
             HStack (spacing: 50) {
                 ForEach(speedGame.ownCards) { card in
                     Button(action: {
+                        print("BUTTONCLICKED - OWNCARD")
                         do {
                             if self.speedGame.gameStarted {
                                 try self.speedGame.placeOwnCard(card)
@@ -53,10 +54,11 @@ struct SpeedView: View {
                             print(error)
                         }
                     }) {
-                        Image(card.imageName)
+                        Image(card.buttonImageName)
                             .renderingMode(.original)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
+                            .disabled(card.placeholder)
                     }
                 }
                 ScoreView(displayOpponent: false)

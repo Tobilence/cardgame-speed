@@ -8,12 +8,22 @@
 
 import Foundation
 
-class Card: Identifiable {
+class Card: Identifiable, ObservableObject {
     
     let id = UUID()
     var type: CardType
     var value: CardValue
-    var viewable: Bool
+    @Published var placeholder: Bool
+    var buttonImageName: String {
+        get {
+            if placeholder {
+                return "blue_back"
+            }
+            else {
+                return value.imageSyntax() + type.imageSyntax()
+            }
+        }
+    }
     var imageName: String {
         get {
             return value.imageSyntax() + type.imageSyntax()
@@ -23,13 +33,13 @@ class Card: Identifiable {
     init(type: CardType, value: CardValue){
         self.type = type
         self.value = value
-        self.viewable = false
+        self.placeholder = false
     }
     
     init(type: CardType, value: CardValue, viewable: Bool){
         self.type = type
         self.value = value
-        self.viewable = viewable
+        self.placeholder = viewable
     }
     
     func isHigher(than card: CardValue) -> Bool {
