@@ -8,12 +8,12 @@
 
 import Foundation
 
-class Card: Identifiable, ObservableObject {
+class Card: Identifiable {
     
     let id = UUID()
     var type: CardType
     var value: CardValue
-    @Published var placeholder: Bool
+    var placeholder: Bool
     var buttonImageName: String {
         get {
             if placeholder {

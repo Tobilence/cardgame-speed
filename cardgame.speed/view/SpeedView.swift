@@ -41,25 +41,20 @@ struct SpeedView: View {
             HStack (spacing: 50) {
                 ForEach(speedGame.ownCards) { card in
                     Button(action: {
-                        print("BUTTONCLICKED - OWNCARD")
-                        do {
-                            if self.speedGame.gameStarted {
-                                try self.speedGame.placeOwnCard(card)
-                            }
-                            else {
-                                self.speedGame.startGame()
-                                try self.speedGame.placeOwnCard(card)
-                            }
-                        } catch {
-                            print(error)
+                        if self.speedGame.gameStarted {
+                            self.speedGame.playerPlaceCard(card: card)
+                        }
+                        else {
+                            self.speedGame.startGame()
+                            self.speedGame.playerPlaceCard(card: card)
                         }
                     }) {
                         Image(card.buttonImageName)
                             .renderingMode(.original)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .disabled(card.placeholder)
                     }
+                    .disabled(self.speedGame.isPlaceholder(card: card))
                 }
                 ScoreView(displayOpponent: false)
                     .environmentObject(speedGame)
@@ -74,6 +69,7 @@ struct SpeedView: View {
         .edgesIgnoringSafeArea(.all)
     }
 }
+
 
 struct GamePage_Previews: PreviewProvider {
     static var previews: some View {

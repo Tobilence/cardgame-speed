@@ -10,27 +10,26 @@ import Foundation
 
 class SpeedGame: ObservableObject {
     
-    var cardDeck:CardDeck = CardDeck()
+    private var timer: SpeedOpponent!
+    private var cardDeck:CardDeck = CardDeck()
     var gameStarted = false
-    var timer: SpeedOpponent!
     @Published var ownScore:Int = 0
     @Published var opponentScore:Int = 0
     @Published var ownCards:[Card] = []
     var opponentCards:[Card] = []
     @Published var showingCards:[Card] = []
     @Published var gameOver = false
+    @Published var placeholders = [Bool](repeating: false, count: 5)
     
     init() {
         do {
             for _ in 1...5 {
-                self.ownCards.append(try cardDeck.pickCard())
-                self.opponentCards.append(try cardDeck.pickCard())
+                self.ownCards.append(cardDeck.pickCard()!)
+                self.opponentCards.append(cardDeck.pickCard()!)
             }
             for _ in 1...2 {
-                self.showingCards.append(try cardDeck.pickCard())
+                self.showingCards.append(cardDeck.pickCard()!)
             }
-        } catch {
-            print("Should never throw here: \(error)")
         }
     }
     
@@ -40,96 +39,133 @@ class SpeedGame: ObservableObject {
         timer.start()
     }
     
-    ///checks if opponent can place a card - if he can then the card gets placed
-    ///if opponent can't place a card, check if the player can - if he can't then renew the showing cards
-    func opponentPlaceCard(){
-        var opponentCardPlaced = false
-        for (index, card) in opponentCards.enumerated() {
-            do {
-                let showingCardIndex = try cardIsPlaceable(card)
-                showingCards[showingCardIndex] = card
-                opponentCardPlaced = true
-                opponentCards[index] = try cardDeck.pickCard()
-            } catch GameError.cardNotPlaceable {
-            } catch {
-                print(error)
+    func opponentPlaceCard() {
+        var didPlace = false
+        
+        opponentCards.forEach( { opponentCard in
+            //if card is placeable
+            if !opponentCard.placeholder && !didPlace, let placeableIndex = whereToPlace(card: opponentCard) {
+                //place card
+                showingCards[placeableIndex] = opponentCard
+                opponentScore += 1
+                didPlace = true
+                
+                let opponentCardIndex = opponentCards.firstIndex{$0 === opponentCard}
+                //check if any cards are left in the deck
+                if let newCard = cardDeck.pickCard() {
+                    //replace opponentCard with new Card
+                    opponentCards[opponentCardIndex!] = newCard
+                } else {
+                    //no more cards in deck
+                    opponentCard.placeholder = true
+                    checkGameOver()
+                }
+            }
+        })
+        if unplaceableState() {
+            renewShowCards()
+        }
+    }
+    
+    func playerPlaceCard(card: Card) {
+        //checks if card can be placed
+        if let placeableIndex = whereToPlace(card: card) {
+            //place Card
+            showingCards[placeableIndex] = card
+            ownScore += 1
+            
+            let cardIndex = ownCards.firstIndex{$0 === card}
+            //check if any cards are left
+            if let newCard = cardDeck.pickCard() {
+                ownCards[cardIndex!] = newCard
+            } else {
+                //No more cards in Deck
+                placeholders[cardIndex!] = true
+                card.placeholder = true
+                checkGameOver()
             }
         }
-        if opponentCardPlaced {
-            opponentScore += 1
+    }
+    
+    func isPlaceholder(card: Card) -> Bool {
+        return placeholders[ownCards.firstIndex{$0 === card}!]
+    }
+    
+    private func checkGameOver() {
+        var gameOver = true
+        showingCards.forEach( { showCard in
+            
+            ownCards.forEach { card in
+                if placeable(card, showCard) && !card.placeholder {
+                    gameOver = false
+                }
+            }
+            
+            opponentCards.forEach { card in
+                if placeable(card, showCard) && !card.placeholder {
+                    gameOver = false
+                }
+            }
+            
+        })
+        self.gameOver = gameOver
+        if(self.gameOver) {
+            print("GAMEOVER - \(evaluateWinner())")
+        }
+    }
+    
+    private func renewShowCards() {
+        if(cardDeck.cards.count >= 2) {
+            for showCardIndex in showingCards.indices {
+                showingCards[showCardIndex] = cardDeck.pickCard()!
+            }
         }
         else {
-            var playerCanPlace = false
-            for card in ownCards {
-                do {
-                    try cardIsPlaceable(card)
-                    playerCanPlace = true
-                } catch {
-                    print("player can't place card either")
-                }
-            }
-            if !playerCanPlace {
-                renewShowingCards()
-            }
+            print("GAMEOVER - \(evaluateWinner())")
         }
     }
     
-    /// replaces the showCard with the given card
-    /// replaces the ownCard with a random new Card from the deck (if possible)
-    /// throws if the card cant replace a showCard or if no Cards are left in the deck
-    func placeOwnCard(_ card: Card) throws {
-        do {
-            let placeableIndex = try cardIsPlaceable(card)
-            showingCards[placeableIndex] = card
-            let indexOfOwnCard = ownCards.firstIndex(where: {ownCard in
-                ownCard === card
-            })
-            ownCards[indexOfOwnCard!] = try cardDeck.pickCard()
-            ownScore += 1
-        }
-        catch (CardError.notEnoughCards) {
-            card.placeholder = true
-            if ownCards.count == 0 {
-                self.gameOver = true
-                print("Game Over! Player no more cards")
-            }
-        }
-        catch {
-            throw error
+    func evaluateWinner() -> String {
+        if opponentScore > ownScore {
+            return "Opponent Won!"
+        } else if opponentScore == ownScore{
+            return "It's a tie!"
+        } else {
+            return "You Won!"
         }
     }
     
-    /// checks if the card can replace a showCard
-    /// returns the index of the showCard which can be replaced by the card
-    /// throws if the card can't be placed
-    private func cardIsPlaceable(_ card: Card) throws -> Int {
-        for i in showingCards.indices {
-            
-            if     card.value.rawValue == showingCards[i].value.rawValue - 1
-                || card.value.rawValue == showingCards[i].value.rawValue + 1
-                || card.value == showingCards[i].value
-                || card.value.rawValue == 1 && showingCards[i].value.rawValue == 13
-                || card.value.rawValue == 13 && showingCards[i].value.rawValue == 1
-            {
-                return i
+    private func unplaceableState() -> Bool {
+        var placeable = false
+        ownCards.forEach( { ownCard in
+            if whereToPlace(card: ownCard) != nil {
+                placeable = true
             }
-        }
-        throw GameError.cardNotPlaceable
+        })
+        
+        opponentCards.forEach( {opponentCard in
+            if whereToPlace(card: opponentCard) != nil {
+                placeable = true
+            }
+        })
+        return !placeable
     }
     
-    ///places 2 new showingCards and gets rid of the old ones
-    private func renewShowingCards() {
-        print("RENEW")
-        for (index, _) in showingCards.enumerated() {
-            do {
-                showingCards[index] = try cardDeck.pickCard()
-            } catch CardError.notEnoughCards {
-                if showingCards.count != 2 {
-                    gameOver = true
-                }
-            } catch {
-                print(error)
+    ///checks at which index a card can be Placed
+    private func whereToPlace(card: Card) -> Int? {
+        for (index, showCard) in showingCards.enumerated() {
+            if placeable(card, showCard) {
+                return index
             }
         }
+        return nil
+    }
+    
+    ///checks if the given card can replace a current ShowCard
+    private func placeable(_ card: Card, _ showCard: Card) -> Bool {
+            return (card.value.rawValue == showCard.value.rawValue + 1) ||
+                    (card.value.rawValue == showCard.value.rawValue - 1) ||
+                    (card.value.rawValue == 1 && showCard.value.rawValue == 13) ||
+                    (card.value.rawValue == 13 && showCard.value.rawValue == 1)
     }
 }

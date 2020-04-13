@@ -19,16 +19,18 @@ struct MotherView: View {
                 StartPage()
                     .environmentObject(self.viewRouter)
                     .transition(.identity)
-            } else if self.viewRouter.currentView == "GamePage" {
-                SpeedView()
+            } else if self.viewRouter.currentView == "GamePage" || self.viewRouter.currentView == "GameOverPage" {
+                SpeedViewWrapper()
                     .environmentObject(self.viewRouter)
                     .environmentObject(SpeedGame())
                     .transition(.identity)
                 
-            } else if self.viewRouter.currentView == "SettingsPage"{
+            } else if self.viewRouter.currentView == "SettingsPage" {
                 SettingsPage()
                     .environmentObject(self.viewRouter)
                     .transition(.identity)
+            } else {
+                Text("Error in Motherview")
             }
         }
     }

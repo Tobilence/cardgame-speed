@@ -45,9 +45,9 @@ class CardDeck {
     }
     
     //returns a card, and removes it from the deck
-    func pickCard() throws -> Card {
+    func pickCard() -> Card? {
         if (cards.count == 0) {
-            throw CardError.notEnoughCards
+            return nil
         }
         let randomNumber = Int.random(in: 0...cards.count-1)
         let pickedCard = cards[randomNumber]

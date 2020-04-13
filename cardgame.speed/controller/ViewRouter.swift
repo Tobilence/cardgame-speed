@@ -11,4 +11,5 @@ import Foundation
 class ViewRouter: ObservableObject {
     
     @Published var currentView:String = "StartPage"
+    @Published var speedGame:SpeedGame!
 }
